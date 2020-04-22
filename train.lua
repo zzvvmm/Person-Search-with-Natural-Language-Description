@@ -1,13 +1,16 @@
 require 'torch'
 require 'nn'
 require 'nngraph'
-require 'loadcaffe'
+-- require 'loadcaffe'
 require 'gnuplot'
+-- local caffegraph = require 'caffegraph'
 local utils = require 'misc.utils'
 local net_utils = require 'misc.net_utils'
 require 'misc.DataLoader'
 require 'misc.optim_updates'
 require 'misc.LanguageModel'
+require 'caffe'
+
 -------------------------------------------------------------------------------
 -- Input arguments and options
 -------------------------------------------------------------------------------
@@ -20,7 +23,7 @@ cmd:text('Options')
 -- Data input settings
 cmd:option('-input_h5','data/reidtalk.h5','path to the h5file containing the preprocessed dataset')
 cmd:option('-input_json','data/reidtalk.json','path to the json file containing additional info and vocab')
-cmd:option('-cnn_proto','model/VGG_ILSVRC_16_layers_deploy.prototxt','path to CNN prototxt file in Caffe format.')
+cmd:option('-cnn_proto','model/VGG_ILSVRC_16_layers_deploy.prototxt.txt','path to CNN prototxt file in Caffe format.')
 cmd:option('-cnn_model','model/VGG16_iter_50000.caffemodel','path to VGG-16 Visual CNN')
 cmd:option('-start_from', '', 'path to a model checkpoint to initialize model weights from. Empty = don\'t')
 
@@ -29,7 +32,7 @@ cmd:option('-neg_time',3)
 cmd:option('-input_encoding_size',512,'the encoding size of each token in the vocabulary, and the image.')
 cmd:option('-rnn_size',512,'size of the rnn in number of hidden nodes in each layer')
 -- Optimization: General
-cmd:option('-batch_size',32)
+cmd:option('-batch_size',16)
 cmd:option('-grad_clip',5,'clip gradients at this value (note should be lower than usual 5 because we normalize grads by both batch and seq_length)')
 cmd:option('-drop_prob_lm', 0.5, 'strength of dropout in the Language Model RNN')
 cmd:option('-finetune_cnn_after', -1, 'After what iteration do we start finetuning the CNN? (-1 = disable; never finetune, 0 = finetune from start)')
@@ -115,7 +118,11 @@ else
   local cnn_backend = opt.backend
   if opt.gpuid == -1 then cnn_backend = 'nn' end -- override to nn if gpu is disabled
   
-  local cnn_raw = loadcaffe.load(opt.cnn_proto, opt.cnn_model, cnn_backend)
+  -- local cnn_raw = loadcaffe.load(opt.cnn_proto, opt.cnn_model, cnn_backend)
+  -- local cnn_raw = caffegraph.load('model/ResNet-152-deploy.prototxt', 'model/ResNet-152-model.caffemodel')
+  local cnn_raw = caffe.Net(opt.cnn_proto, opt.cnn_model, 'test')
+
+
   protos.cnn = net_utils.build_cnn(cnn_raw, {encoding_size = opt.input_encoding_size, backend = cnn_backend})
 
   protos.crit = nn.BCECriterion()

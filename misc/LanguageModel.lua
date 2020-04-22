@@ -4,6 +4,7 @@ local net_utils = require 'misc.net_utils'
 local LSTM = require 'misc.LSTM'
 local Attention = require 'misc.Attention'
 local EMB_IMG = require 'misc.EMB_IMG'
+local dbg = require("debugger")
 -------------------------------------------------------------------------------
 -- Language Model core
 -------------------------------------------------------------------------------
@@ -112,7 +113,7 @@ function layer:updateOutput(input)
   local seqlen = input[3] 
   local batch_size = seq:size(2)
   assert(seq:size(1) == self.seq_length)
-
+  dbg()
   self.mask = torch.CudaByteTensor() 
   self.mask:resize(seq:size()):zero()
   self.mask[torch.eq(seq, 0)] = 1  
